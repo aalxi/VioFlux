@@ -1,76 +1,70 @@
-# VioFlux
-Epigenetic flux simulator for violacein biosynthesis — TurbioHacks 2025 project.
+# VioFlux — Epigenetic Tuning Simulator (Violacein)
 
-## How to run
+Interactive, self-contained web app that models epigenetic tuning on the **violacein** pathway (VioA–E).  
 
-We provide two ways to explore VioFlux:
-
-### Option A — Full simulator (Python/Streamlit)
-This is the functional backend with CSV-driven parameters, soft-min bottleneck math, and penalties.
-
-```bash
-git clone https://github.com/aalxi/VioFlux.git
-cd VioFlux
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cd epi-sim
-streamlit run app.py
-
-Got it — thanks for pasting both. Now it’s crystal clear:
-
-### What’s happening
-
-* **`script.js`**:
-
-  * All the math (yield changes, bottleneck, sensitivities) is hard-coded *in the browser*.
-  * It never calls `fetch(...)` or hits an API.
-  * It just runs simulation rules in JavaScript on the client side.
-
-* **`app.py`** (Streamlit):
-
-  * Separate, Python-based backend+UI.
-  * Real math (CSV-driven modules, soft-min, penalties, etc.).
-  * Judges run this with `streamlit run app.py`.
-
-👉 So: these are **two independent implementations** of the same idea.
-
-* The **frontend (`index.html + script.js`) is a self-contained mock** — judges can open it instantly, no backend required.
-* The **Streamlit app is the actual backend+functional simulator** — requires Python, gives rigorous results.
 
 ---
 
-### What to tell judges / put in README
+## Quickstart
 
-````markdown
-## How to run
-
-We provide two ways to explore VioFlux:
-
-### Option A — Full simulator (Python/Streamlit)
-This is the functional backend with CSV-driven parameters, soft-min bottleneck math, and penalties.
-
-```bash
-git clone https://github.com/aalxi/VioFlux.git
-cd VioFlux
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cd epi-sim
-streamlit run app.py
-````
-
-This opens a browser window with the Violacein simulator, yield panel, bottleneck display, sensitivity bars, and grid search.
-
-
-### Option B — Static web interface (HTML/JS mock)
-
-This is a polished concept UI. The simulation rules are simplified and run directly in the browser via JavaScript.
-
+### Clone and open
 ```bash
 git clone https://github.com/aalxi/VioFlux.git
 cd VioFlux/web-interface
-# then double-click index.html, or open it in your browser
-```
+````
 
-This interface looks like a production webapp, but it does not connect to the Python backend. It’s meant to illustrate the UI/UX vision.
+Now open the UI:
 
-```
+* **macOS:** `open index.html`
+* **Windows (CMD):** `start index.html`
+* **Linux:** `xdg-open index.html`
+* Or just **double-click** `index.html`.
+
+> Everything runs locally in your browser. Internet is not required.
+
+---
+
+## What you can do
+
+* **Toggle per-gene epigenetic modules** (buttons):
+
+  * `VPR_Activation` (activator)
+  * `KRAB_Repression` (repressor)
+  * `Methylation_Lock` (binary switch)
+  * `Neutral` (no effect)
+* **Set module “level”** (slider 0.00–1.00) for each gene.
+* **See outputs update live:**
+
+  * **Yield** (× relative units) and % change vs baseline
+  * **Bottleneck** gene (if detected by rules)
+  * **Gene sensitivity bars** (relative influence)
+  * **Data view**: active genes, current supply cap, burden sensitivity, current yield
+* **Run a sample grid search** (pre-computed examples) in the “Grid” panel.
+* **Reset** to the neutral starting state.
+
+---
+
+## Pathway & modules (current defaults)
+
+### Pathway (linear order)
+
+`VioA → VioB → VioE → VioD → VioC`
+Each step has a baseline activity and a burden weight:
+
+* `baseline_k = 1.0` for all steps
+* `burden_w = 1.0` except `VioC = 1.2`
+
+### Module types (front-end model)
+
+* **VPR\_Activation** (`type: activator`) — adds to yield proportionally to level
+* **KRAB\_Repression** (`type: repressor`) — multiplies yield by a factor < 1 as level increases
+* **Methylation\_Lock** (`type: binary`) — ON (≥0.5) gives a fixed boost; OFF gives none
+* **Neutral** — no change
+
+---
+
+## Credits:
+
+Backend/Mathematical modeling - Alexei Manuel
+
+Frontend/UI - Taha Zuberi
