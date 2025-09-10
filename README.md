@@ -67,4 +67,4 @@ Each step has a baseline activity and a burden weight:
 
 Backend/Mathematical modeling - Alexei Manuel
 
-Frontend/UI - Taha Zuberi
+Frontend/UI and some Backend - Taha Zuberi
