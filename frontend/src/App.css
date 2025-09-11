@@ -1,11 +1,9 @@
-/* ========= Base / Globals ========= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* NEW: variables + space for the floating controls */
 :root {
   --controls-width: 320px;
   --controls-gap: 20px;
@@ -42,7 +40,6 @@
   100% { transform: translateX(10px) translateY(5px); }
 }
 
-/* ========= Navbar ========= */
 .navbar {
   background: linear-gradient(135deg, rgba(26, 37, 47, 0.95) 0%, rgba(44, 62, 80, 0.95) 100%);
   backdrop-filter: blur(10px);
@@ -114,14 +111,12 @@
   transform: translateY(-1px);
 }
 
-/* ========= Layout ========= */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* Tabs */
 .tab-content {
   animation: fadeInUp 0.5s ease-out;
 }
@@ -164,7 +159,6 @@
   font-weight: 300;
 }
 
-/* Cards */
 .card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -221,7 +215,6 @@
   border-radius: 2px;
 }
 
-/* Main layout for pathways */
 .main-content {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -234,7 +227,6 @@
   gap: 25px;
 }
 
-/* Pathway diagram */
 .pathway-box {
   display: flex;
   align-items: center;
@@ -338,7 +330,6 @@
   50% { transform: scale(1.1); opacity: 1; }
 }
 
-/* Legend */
 .legend {
   display: flex;
   justify-content: center;
@@ -385,7 +376,6 @@
   box-shadow: 0 2px 8px rgba(155, 89, 182, 0.4);
 }
 
-/* Yield card */
 .yield-card {
   text-align: center;
   background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2));
@@ -478,7 +468,6 @@
   font-weight: 600;
 }
 
-/* Sensitivity bars */
 .sensitivity-list {
   display: flex;
   flex-direction: column;
@@ -538,7 +527,6 @@
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* ========= Controls panel (FIXED) ========= */
 .controls-panel {
   position: fixed;
   right: var(--controls-gap);
@@ -722,7 +710,6 @@
   transform: translateY(0);
 }
 
-/* Experiments, Data, etc. */
 .experiments-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -895,7 +882,6 @@
   box-shadow: 0 4px 15px rgba(52,152,219,0.2);
 }
 
-/* ========= Responsive ========= */
 @media (max-width: 1000px) {
   .App {
     padding-right: 0;
@@ -965,81 +951,3 @@
   .legend {
     gap: 15px;
   }
-  
-  .legend-item {
-    font-size: 12px;
-    padding: 6px 12px;
-  }
-}
-
-/* Scrollbars + polish */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #2980b9, #21618c);
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg);}
-  100% { transform: rotate(360deg);}
-}
-
-.loading::after {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-left: 8px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.pulse {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(52,152,219,0.4);}
-  70% { box-shadow: 0 0 0 15px rgba(52,152,219,0);}
-  100% { box-shadow: 0 0 0 0 rgba(52,152,219,0);}
-}
-
-button:focus, .nav-link:focus, .control-btn:focus, .slider:focus {
-  outline: 2px solid #3498db;
-  outline-offset: 2px;
-}
-
-* {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-}
-
-.glass {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.2);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-}
-
-.error-message {
-  color: #e74c3c;
-  text-align: center;
-  padding: 20px;
-  background: rgba(231, 76, 60, 0.1);
-  border-radius: 12px;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  margin: 20px 0;
-}
