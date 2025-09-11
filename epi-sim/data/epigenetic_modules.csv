@@ -1,4 +1,0 @@
-module,type,A_max,min_fold,EC50,h,leak,notes
-CRISPRa_Ec,activator,6.0,,0.5,2,0.0,SoxS/AsiA-style CRISPRa ~2–8x
-CRISPRi_dCas9,repressor,,0.10,0.5,2,0.05,dCas9 CRISPRi leaves ~5–20% residual
-Methylation,binary,,0.00,0.5,10,0.05,Coarse ON/OFF lock with small leak
