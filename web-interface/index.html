@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VioFlux - Violacein Pathway Simulator</title>
+    <style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+    z-index: -1;
+    animation: backgroundShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes backgroundShift {
+    0% { transform: translateX(-10px) translateY(-5px); }
+    100% { transform: translateX(10px) translateY(5px); }
+}
+
+
+.navbar {
+    background: linear-gradient(135deg, rgba(26, 37, 47, 0.95) 0%, rgba(44, 62, 80, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #3498db;
+    text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+}
+
+.nav-links {
+    margin-left: auto;
+    display: flex;
+    gap: 5px;
+}
+
+.nav-link {
+    padding: 12px 24px;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nav-link:hover::before {
+    left: 100%;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
+    transform: translateY(-1px);
+}
+
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Tab system */
+.tab-content {
+    display: none;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.title {
+    font-size: 42px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3498db, #9b59b6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    animation: titleFloat 4s ease-in-out infinite alternate;
+}
+
+@keyframes titleFloat {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-5px); }
+}
+
+.subtitle {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+}
+
+/* Cards */
+.card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    transform: rotate(45deg);
+    transition: all 0.8s;
+    opacity: 0;
+}
+
+.card:hover::before {
+    opacity: 1;
+    transform: rotate(45deg) translateX(100%);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card h3 {
+    color: #3498db;
+    margin-bottom: 20px;
+    font-size: 20px;
+    font-weight: 600;
+    position: relative;
+}
+
+.card h3::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, #9b59b6);
+    border-radius: 2px;
+}
+
+/* Main layout for pathways */
+.main-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+.left-panel, .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Pathway diagram */
+.pathway-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gene-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.gene-node:hover {
+    transform: scale(1.05);
+}
+
+.gene-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 3px solid transparent;
+    position: relative;
+    overflow: hidden;
+    font-size: 14px;
+}
+
+.gene-circle::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: transform 0.6s;
+    transform: translateX(-100%) rotate(45deg);
+}
+
+.gene-circle:hover::before {
+    transform: translateX(100%) rotate(45deg);
+}
+
+.gene-circle:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.gene-circle.neutral {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.gene-circle.vpr-activation {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border-color: #27ae60;
+    box-shadow: 0 0 20px rgba(39, 174, 96, 0.4);
+}
+
+.gene-circle.krab-repression {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border-color: #e74c3c;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+}
+
+.gene-circle.methylation-lock {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    border-color: #9b59b6;
+    box-shadow: 0 0 20px rgba(155, 89, 182, 0.4);
+}
+
+.gene-label {
+    font-size: 16px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.pathway-arrow {
+    font-size: 32px;
+    color: #3498db;
+    animation: arrowPulse 2s ease-in-out infinite;
+    text-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+    text-align: center;
+}
+
+@keyframes arrowPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.legend-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.legend-dot.green { 
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+}
+.legend-dot.red { 
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+}
+.legend-dot.purple { 
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.4);
+}
+
+/* Yield card */
+.yield-card {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(155, 89, 182, 0.2));
+}
+
+.yield-number {
+    font-size: 56px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3498db, #9b59b6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    animation: yieldPulse 3s ease-in-out infinite;
+}
+
+@keyframes yieldPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.yield-change {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.yield-bars {
+    margin: 25px 0;
+}
+
+.bar-section {
+    margin-bottom: 20px;
+}
+
+.bar-label {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.bar-container {
+    height: 25px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bar-fill {
+    height: 100%;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.bar-fill.baseline {
+    background: linear-gradient(90deg, #7f8c8d, #95a5a6);
+}
+
+.bar-fill.current {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.bottleneck-box {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.8), rgba(192, 57, 43, 0.8));
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 25px;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.bottleneck-box h4 {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+/* Sensitivity bars */
+.sensitivity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sensitivity-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.sensitivity-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.sensitivity-label {
+    min-width: 70px;
+    font-weight: 600;
+    color: #3498db;
+}
+
+.sensitivity-bar {
+    flex: 1;
+    height: 25px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sensitivity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2980b9);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.sensitivity-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 3s infinite;
+}
+
+.sensitivity-value {
+    min-width: 60px;
+    text-align: right;
+    font-weight: 600;
+    color: #3498db;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Controls panel */
+.controls-panel {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(26, 37, 47, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 25px;
+    width: 320px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideInRight 0.6s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.controls-panel h3 {
+    color: #3498db;
+    margin-bottom: 20px;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.control-group {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.control-group:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.control-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #3498db;
+    text-align: center;
+}
+
+.control-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.control-btn {
+    padding: 10px 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.control-btn:hover::before {
+    left: 100%;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn.active {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-color: #3498db;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+    transform: translateY(-1px);
+}
+
+.control-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.control-section label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #3498db;
+}
+
+.slider {
+    width: 100%;
+    margin: 15px 0;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.4);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
+.reset-button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reset-button:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-2px);
+}
+
+.reset-button:active {
+    transform: translateY(0);
+}
+
+/* Experiments page */
+.experiments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.run-button {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.run-button:hover {
+    background: linear-gradient(135deg, #2980b9, #21618c);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.results-box {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.results-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.results-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.results-box::-webkit-scrollbar-thumb {
+    background: rgba(52, 152, 219, 0.6);
+    border-radius: 3px;
+}
+
+.config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.config-item {
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.config-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s;
+}
+
+.config-item:hover::before {
+    left: 100%;
+}
+
+.config-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.config-item.good {
+    background: rgba(39, 174, 96, 0.2);
+    border-left-color: #27ae60;
+    box-shadow: 0 2px 10px rgba(39, 174, 96, 0.1);
+}
+
+.config-item.ok {
+    background: rgba(52, 152, 219, 0.2);
+    border-left-color: #3498db;
+    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.1);
+}
+
+.config-item.bad {
+    background: rgba(231, 76, 60, 0.2);
+    border-left-color: #e74c3c;
+    box-shadow: 0 2px 10px rgba(231, 76, 60, 0.1);
+}
+
+.param-effects {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.param-effects div {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border-left: 3px solid #3498db;
+}
+
+.param-effects div:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+/* Data page */
+.data-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.data-table th,
+.data-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.data-table th {
+    background: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.data-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.setting-item {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #3498db;
+}
+
+.setting-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 1000px) {
+    .controls-panel {
+        position: static;
+        transform: none;
+        margin-top: 20px;
+        width: 100%;
+        animation: none;
+    }
+    
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .data-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .nav-links {
+        gap: 2px;
+    }
+    
+    .nav-link {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 600px) {
+    .pathway-box {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+        
+    }
+    
+    .pathway-arrow {
+        transform: rotate(90deg);
+        margin: 10px 0;
+    }
+    
+    .title {
+        font-size: 28px;
+    }
+    
+    .control-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .gene-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 12px;
+    }
+    
+    .yield-number {
+        font-size: 42px;
+    }
+    
+    .experiments-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .legend {
+        gap: 15px;
+    }
+    
+    .legend-item {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #2980b9, #21618c);
+}
+
+/* Loading animation for buttons */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Pulse animation for active elements */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(52, 152, 219, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+    }
+}
+
+/* Improved focus states for accessibility */
+button:focus,
+.nav-link:focus,
+.control-btn:focus,
+.slider:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+/* Enhanced glass morphism effect */
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            VioFlux
+        </div>
+        <div class="nav-links">
+            <div class="nav-link active" data-tab="pathways">Pathways</div>
+            <div class="nav-link" data-tab="experiments">Experiments</div>
+            <div class="nav-link" data-tab="data">Data</div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Pathways Tab -->
+        <div id="pathways" class="tab-content active">
+            <div class="header">
+                <h1 class="title">VioFlux Pathway Simulator</h1>
+                <p class="subtitle">Violacein biosynthesis optimization tool</p>
+            </div>
+
+            <div class="main-content">
+                <div class="left-panel">
+                    <div class="card">
+                        <h3>Pathway Diagram</h3>
+                        <div class="pathway-box" id="pathwayContainer">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-dot green"></div>
+                                CRISPRa (activation)
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot red"></div>
+                                CRISPRi (repression)
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot purple"></div>
+                                Methylation lock
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Gene Activity</h3>
+                        <div class="sensitivity-list" id="sensitivityBars">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="card yield-card">
+                        <h3>Yield Results</h3>
+                        <div class="yield-number" id="yieldValue">1.0x</div>
+                        <div class="yield-change" id="yieldChange">+0%</div>
+                        
+                        <div class="yield-bars">
+                            <div class="bar-section">
+                                <div class="bar-label">Baseline</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill baseline" style="width: 100%;"></div>
+                                </div>
+                            </div>
+                            <div class="bar-section">
+                                <div class="bar-label">Current</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill current" id="currentYieldBar" style="width: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bottleneck-box" id="bottleneckInfo">
+                            <h4>Bottleneck Gene:</h4>
+                            <p id="bottleneckGene">None</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experiments Tab -->
+        <div id="experiments" class="tab-content">
+            <div class="header">
+                <h1 class="title">Experiment Results</h1>
+                <p class="subtitle">Previous runs and optimization data</p>
+            </div>
+
+            <div class="experiments-grid">
+                <div class="card">
+                    <h3>Quick Grid Search</h3>
+                    <p style= "margin-bottom: 20px;">Test all combinations of OFF/MED/ON for each gene</p>
+                    <button onclick="runGridSearch()" class="run-button">Run Grid Search</button>
+                    <div id="gridResults" class="results-box"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Best Configurations</h3>
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7);">Run the grid search to find top configurations. Results will appear here.</p>
+                    <div id="bestConfigsList" class="config-list"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Model Notes</h3>
+                    <p style="margin-bottom: 20px;">Key constraints from the simulation model</p>
+                    <div class="param-effects">
+                        <div><strong>VioE is critical:</strong> activity &lt; 0.10 → hard zero (CPA diversion, no violacein)</div>
+                        <div><strong>VioC shunt:</strong> if VioC is weak relative to pathway median, flux leaks to chromoviridans (up to 35%)</div>
+                        <div><strong>Supply cap:</strong> limits max flux regardless of upstream activity</div>
+                        <div><strong>Burden penalty:</strong> over-expressing all genes strains the proteome — balanced is better than maximal</div>
+                        <div><strong>Imbalance penalty:</strong> large upstream activities relative to bottleneck cause metabolic buildup</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Tab -->
+        <div id="data" class="tab-content">
+            <div class="header">
+                <h1 class="title">Pathway Data</h1>
+                <p class="subtitle">Gene information and current settings</p>
+            </div>
+
+            <div class="data-section">
+                <div class="card">
+                    <h3>Gene Data</h3>
+                    <table class="data-table">
+                        <tr>
+                            <th>Gene</th>
+                            <th>Order</th>
+                            <th>Baseline</th>
+                            <th>Burden</th>
+                        </tr>
+                        <tbody id="pathwayDataTable">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Current Settings</h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <strong>Supply Cap:</strong> <span id="currentSupplyCap">2.0</span>
+                        </div>
+                        <div class="setting-item">
+                            <strong>Burden Factor:</strong> <span id="currentBurdenSensitivity">0.05</span>
+                        </div>
+                        <div class="setting-item">
+                            <strong>Active Genes:</strong> <span id="activeGeneCount">0/5</span>
+                        </div>
+                        <div class="setting-item">
+                            <strong>Current Yield:</strong> <span id="currentYield">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <h3>Gene Controls</h3>
+        <div id="geneControls">
+            <!-- Populated by JS -->
+        </div>
+        
+        <div class="control-section">
+            <label>Supply Cap</label>
+            <input type="range" class="slider" id="supplyCap" min="0.5" max="3.0" step="0.1" value="2.0">
+            <span id="supplyCapValue">2.0</span>
+        </div>
+        
+        <div class="control-section">
+            <label>Burden Sensitivity</label>
+            <input type="range" class="slider" id="burdenSensitivity" min="0.0" max="0.15" step="0.01" value="0.05">
+            <span id="burdenSensitivityValue">0.05</span>
+        </div>
+
+        <button onclick="resetAll()" class="reset-button">Reset All</button>
+    </div>
+
+    <script>
+// ─── Data (mirrors violacein_pathway.tsv + epigenetic_modules.csv) ───
+
+var pathwayData = [
+    { gene: 'VioA', step_order: 1, baseline_k: 1.0, burden_w: 1.0 },
+    { gene: 'VioB', step_order: 2, baseline_k: 1.0, burden_w: 1.0 },
+    { gene: 'VioE', step_order: 3, baseline_k: 1.0, burden_w: 1.0 },
+    { gene: 'VioD', step_order: 4, baseline_k: 1.0, burden_w: 1.0 },
+    { gene: 'VioC', step_order: 5, baseline_k: 1.0, burden_w: 1.2 }
+];
+
+var MODULE_CONFIG = {
+    'CRISPRa':     { type: 'activator', className: 'vpr-activation',   A_max: 6.0,  EC50: 0.5, h: 2.0,  leak: 0.0,  label: 'CRISPRa' },
+    'CRISPRi':     { type: 'repressor', className: 'krab-repression',  min_fold: 0.10, EC50: 0.5, h: 2.0,  leak: 0.05, label: 'CRISPRi' },
+    'Methylation': { type: 'binary',    className: 'methylation-lock', EC50: 0.5, h: 10.0, leak: 0.05, label: 'Methyl.' },
+    'Neutral':     { type: 'neutral',   className: 'neutral',          label: 'Neutral' }
+};
+var MODULE_NAMES = Object.keys(MODULE_CONFIG);
+
+var geneStates = {};
+var baselineYield = 1.0;
+
+// ─── sim_core.js (exact port of sim_core.py) ───
+
+function hill(x, EC50, h) {
+    x = Math.max(0.0, Math.min(1.0, x));
+    var xh = Math.pow(x, h);
+    return xh / (xh + Math.pow(EC50, h));
+}
+
+function foldChange(mod, level) {
+    if (mod.type === 'activator') {
+        return 1.0 + (mod.A_max - 1.0) * hill(level, mod.EC50, mod.h);
+    }
+    if (mod.type === 'repressor') {
+        var floor = mod.min_fold + mod.leak;
+        return floor + (1.0 - floor) / (1.0 + Math.pow(level / mod.EC50, mod.h));
+    }
+    if (mod.type === 'binary') {
+        return level >= 0.5 ? 1.0 : mod.leak;
+    }
+    return 1.0;
+}
+
+function softmin(vals, p) {
+    var sum = 0.0;
+    for (var i = 0; i < vals.length; i++) sum += Math.pow(Math.max(1e-9, vals[i]), -p);
+    return Math.pow(sum / vals.length, -1.0 / p);
+}
+
+function imbalancePenalty(a, Fcore, s, alpha) {
+    var excess = 0.0;
+    for (var i = 0; i < a.length; i++) excess += Math.max(0.0, a[i] / (Fcore + 1e-9) - s);
+    return Math.exp(-alpha * excess);
+}
+
+function burdenPenalty(a, burdenW, gamma) {
+    var phi = 0.0;
+    for (var i = 0; i < a.length; i++) phi += burdenW[i] * a[i];
+    return { phi: phi, penalty: 1.0 / (1.0 + gamma * Math.pow(phi - a.length, 2)) };
+}
+
+function violaceinRules(aMap) {
+    var notes = [];
+    if (aMap['VioE'] < 0.10) {
+        notes.push('VioE < 0.10 \u2192 CPA diversion, no violacein.');
+        return { leak: 0.0, hardZero: true, notes: notes };
+    }
+    var vals = Object.values(aMap).slice().sort(function(a, b) { return a - b; });
+    var n = vals.length;
+    var median = (n % 2 === 0) ? (vals[n/2-1] + vals[n/2]) / 2 : vals[Math.floor(n/2)];
+    var rC = aMap['VioC'] / (median + 1e-9);
+    var leak = Math.max(0.0, Math.min(0.5, 0.6 - Math.min(rC, 1.0))) * 0.7;
+    if (leak > 0) notes.push('Low VioC \u2192 chromoviridans shunt risk.');
+    return { leak: leak, hardZero: false, notes: notes };
+}
+
+function simulateYield(chosenModules, levels, supplyCap, gamma, pSoftmin) {
+    supplyCap = supplyCap || 2.0; gamma = gamma || 0.05; pSoftmin = pSoftmin || 6.0;
+    var s = 2.0, alpha = 0.15;
+
+    var baselineK = pathwayData.map(function(g) { return g.baseline_k; });
+    var burdenW   = pathwayData.map(function(g) { return g.burden_w; });
+
+    var a = pathwayData.map(function(g, i) {
+        return baselineK[i] * foldChange(MODULE_CONFIG[chosenModules[i]], levels[i]);
+    });
+
+    var Fcore = softmin(a, pSoftmin);
+    var F = Math.min(Fcore, supplyCap);
+    var P = imbalancePenalty(a, Fcore, s, alpha);
+    var burd = burdenPenalty(a, burdenW, gamma);
+
+    var aMap = {};
+    pathwayData.forEach(function(g, i) { aMap[g.gene] = a[i]; });
+    var rules = violaceinRules(aMap);
+
+    var minA = Math.min.apply(null, a);
+    var bottleneck = pathwayData[a.indexOf(minA)].gene;
+
+    if (rules.hardZero) {
+        return { yield: 0.0, Fcore: Fcore, F: 0.0, bottleneck: bottleneck, activities: a, notes: rules.notes };
+    }
+    var Y = F * P * (1.0 - rules.leak) * burd.penalty;
+    return { yield: Y, Fcore: Fcore, F: F, bottleneck: bottleneck, activities: a,
+             burden: burd, imbalancePenalty: P, notes: rules.notes };
+}
+
+// ─── UI ───
+
+function initializeGenes() {
+    pathwayData.forEach(function(g) { geneStates[g.gene] = { module: 'Neutral', level: 0.5 }; });
+    var neutral = pathwayData.map(function() { return 'Neutral'; });
+    var half    = pathwayData.map(function() { return 0.5; });
+    baselineYield = simulateYield(neutral, half, 2.0, 0.05, 6.0).yield;
+}
+
+function setupTabs() {
+    var navLinks = document.querySelectorAll('.nav-link');
+    var tabContents = document.querySelectorAll('.tab-content');
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var target = e.target.getAttribute('data-tab');
+            navLinks.forEach(function(l) { l.classList.remove('active'); });
+            tabContents.forEach(function(t) { t.classList.remove('active'); });
+            e.target.classList.add('active');
+            document.getElementById(target).classList.add('active');
+        });
+    });
+}
+
+function buildPathwayDiagram() {
+    var container = document.getElementById('pathwayContainer');
+    container.innerHTML = '';
+    pathwayData.forEach(function(gene, i) {
+        var node = document.createElement('div');
+        node.className = 'gene-node';
+        var circle = document.createElement('div');
+        circle.className = 'gene-circle neutral';
+        circle.textContent = gene.gene;
+        circle.id = 'circle_' + gene.gene;
+        circle.onclick = (function(g) { return function() { cycleGeneModule(g); }; })(gene.gene);
+        var lbl = document.createElement('div');
+        lbl.className = 'gene-label';
+        lbl.textContent = gene.gene;
+        node.appendChild(circle); node.appendChild(lbl);
+        container.appendChild(node);
+        if (i < pathwayData.length - 1) {
+            var arrow = document.createElement('div');
+            arrow.className = 'pathway-arrow'; arrow.textContent = '\u2192';
+            container.appendChild(arrow);
+        }
+    });
+}
+
+function buildGeneControls() {
+    var container = document.getElementById('geneControls');
+    pathwayData.forEach(function(gene) {
+        var group = document.createElement('div'); group.className = 'control-group';
+        var lbl = document.createElement('label'); lbl.className = 'control-label'; lbl.textContent = gene.gene;
+        var btns = document.createElement('div'); btns.className = 'control-buttons';
+        MODULE_NAMES.forEach(function(mn) {
+            var btn = document.createElement('button');
+            btn.className = 'control-btn' + (mn === 'Neutral' ? ' active' : '');
+            btn.textContent = MODULE_CONFIG[mn].label;
+            btn.id = 'btn_' + gene.gene + '_' + mn;
+            btn.onclick = (function(gn, m) { return function() { setGeneModule(gn, m); }; })(gene.gene, mn);
+            btns.appendChild(btn);
+        });
+        var slider = document.createElement('input');
+        slider.type = 'range'; slider.className = 'slider';
+        slider.min = '0'; slider.max = '1'; slider.step = '0.05'; slider.value = '0.5';
+        slider.oninput = (function(gn) { return function() { setGeneLevel(gn, parseFloat(this.value)); }; })(gene.gene);
+        var val = document.createElement('span'); val.textContent = '0.50'; val.id = gene.gene + 'Level';
+        group.appendChild(lbl); group.appendChild(btns); group.appendChild(slider); group.appendChild(val);
+        container.appendChild(group);
+    });
+}
+
+function buildSensitivityBars() {
+    var container = document.getElementById('sensitivityBars');
+    container.innerHTML = '';
+    pathwayData.forEach(function(g) {
+        var item = document.createElement('div'); item.className = 'sensitivity-item';
+        var lbl = document.createElement('div'); lbl.className = 'sensitivity-label'; lbl.textContent = g.gene;
+        var bar = document.createElement('div'); bar.className = 'sensitivity-bar';
+        var fill = document.createElement('div'); fill.className = 'sensitivity-fill';
+        fill.id = 'actbar_' + g.gene; fill.style.width = '100%';
+        bar.appendChild(fill);
+        var val = document.createElement('div'); val.className = 'sensitivity-value';
+        val.id = 'actval_' + g.gene; val.textContent = '1.00';
+        item.appendChild(lbl); item.appendChild(bar); item.appendChild(val);
+        container.appendChild(item);
+    });
+}
+
+function buildDataTable() {
+    var tableBody = document.getElementById('pathwayDataTable');
+    pathwayData.forEach(function(gene) {
+        var row = document.createElement('tr');
+        [gene.gene, gene.step_order, gene.baseline_k.toFixed(1), gene.burden_w.toFixed(1)].forEach(function(v, i) {
+            var td = document.createElement('td'); td.textContent = v;
+            if (i === 0) { td.style.fontWeight = 'bold'; td.style.color = '#3498db'; }
+            row.appendChild(td);
+        });
+        tableBody.appendChild(row);
+    });
+}
+
+function cycleGeneModule(geneName) {
+    var idx = MODULE_NAMES.indexOf(geneStates[geneName].module);
+    setGeneModule(geneName, MODULE_NAMES[(idx + 1) % MODULE_NAMES.length]);
+}
+
+function setGeneModule(geneName, moduleType) {
+    geneStates[geneName].module = moduleType;
+    var circle = document.getElementById('circle_' + geneName);
+    if (circle) circle.className = 'gene-circle ' + MODULE_CONFIG[moduleType].className;
+    MODULE_NAMES.forEach(function(mn) {
+        var btn = document.getElementById('btn_' + geneName + '_' + mn);
+        if (btn) btn.classList.toggle('active', mn === moduleType);
+    });
+    runSimulation();
+}
+
+function setGeneLevel(geneName, level) {
+    geneStates[geneName].level = level;
+    var disp = document.getElementById(geneName + 'Level');
+    if (disp) disp.textContent = level.toFixed(2);
+    runSimulation();
+}
+
+function getSimParams() {
+    var mods = pathwayData.map(function(g) { return geneStates[g.gene].module; });
+    var lvls = pathwayData.map(function(g) { return geneStates[g.gene].level; });
+    var sc = parseFloat((document.getElementById('supplyCap') || {}).value) || 2.0;
+    var gm = parseFloat((document.getElementById('burdenSensitivity') || {}).value) || 0.05;
+    return { mods: mods, lvls: lvls, supplyCap: sc, gamma: gm };
+}
+
+function runSimulation() {
+    var p = getSimParams();
+    var out = simulateYield(p.mods, p.lvls, p.supplyCap, p.gamma, 6.0);
+    var mult = baselineYield > 1e-9 ? out.yield / baselineYield : out.yield;
+
+    var el;
+    el = document.getElementById('yieldValue');
+    if (el) el.textContent = mult.toFixed(2) + 'x';
+    el = document.getElementById('yieldChange');
+    if (el) {
+        var pct = Math.round((mult - 1) * 100);
+        el.textContent = (pct >= 0 ? '+' : '') + pct + '% vs baseline';
+        el.style.color = pct >= 0 ? '#27ae60' : '#e74c3c';
+    }
+    el = document.getElementById('currentYieldBar');
+    if (el) el.style.width = Math.max(5, Math.min(300, mult * 100)) + '%';
+    el = document.getElementById('bottleneckGene');
+    if (el) {
+        var txt = out.bottleneck;
+        if (out.notes && out.notes.length) txt += ' \u2014 ' + out.notes.join(' ');
+        el.textContent = txt;
+    }
+
+    var maxA = Math.max.apply(null, out.activities.map(function(x) { return Math.max(1e-9, x); }));
+    pathwayData.forEach(function(g, i) {
+        var fill = document.getElementById('actbar_' + g.gene);
+        var val  = document.getElementById('actval_' + g.gene);
+        if (fill) fill.style.width = (out.activities[i] / maxA * 100) + '%';
+        if (val)  val.textContent = out.activities[i].toFixed(2);
+    });
+
+    var activeGenes = pathwayData.filter(function(g) {
+        return MODULE_CONFIG[geneStates[g.gene].module].type !== 'neutral';
+    }).length;
+    el = document.getElementById('activeGeneCount'); if (el) el.textContent = activeGenes + '/5';
+    el = document.getElementById('currentSupplyCap'); if (el) el.textContent = p.supplyCap.toFixed(1);
+    el = document.getElementById('currentBurdenSensitivity'); if (el) el.textContent = p.gamma.toFixed(2);
+    el = document.getElementById('currentYield'); if (el) el.textContent = out.yield.toFixed(3);
+}
+
+function resetAll() {
+    pathwayData.forEach(function(gene) {
+        var g = gene.gene;
+        geneStates[g] = { module: 'Neutral', level: 0.5 };
+        var circle = document.getElementById('circle_' + g); if (circle) circle.className = 'gene-circle neutral';
+        MODULE_NAMES.forEach(function(mn) {
+            var btn = document.getElementById('btn_' + g + '_' + mn);
+            if (btn) btn.classList.toggle('active', mn === 'Neutral');
+        });
+        var disp = document.getElementById(g + 'Level'); if (disp) disp.textContent = '0.50';
+    });
+    document.querySelectorAll('.slider').forEach(function(sl) {
+        if (sl.id !== 'supplyCap' && sl.id !== 'burdenSensitivity') sl.value = 0.5;
+    });
+    runSimulation();
+}
+
+function runGridSearch() {
+    var gridResults = document.getElementById('gridResults');
+    if (!gridResults) return;
+    gridResults.innerHTML = '<p style="color:#3498db;">Running 243-point grid (3 levels \u00d7 5 genes, CRISPRa)...</p>';
+    setTimeout(function() {
+        var p = getSimParams();
+        var levels = [0.05, 0.5, 1.0];
+        var results = [];
+        for (var a=0;a<3;a++) for (var b=0;b<3;b++) for (var e=0;e<3;e++) for (var d=0;d<3;d++) for (var c=0;c<3;c++) {
+            var lvls = [levels[a], levels[b], levels[e], levels[d], levels[c]];
+            var mods = pathwayData.map(function() { return 'CRISPRa'; });
+            var res = simulateYield(mods, lvls, p.supplyCap, p.gamma, 6.0);
+            results.push({ VioA: levels[a], VioB: levels[b], VioE: levels[e], VioD: levels[d], VioC: levels[c],
+                           yield: res.yield, bottleneck: res.bottleneck });
+        }
+        results.sort(function(a, b) { return b.yield - a.yield; });
+        var top10 = results.slice(0, 10);
+        var html = '<div style="max-height:250px;overflow-y:auto;">';
+        top10.forEach(function(r, i) {
+            var cls = i === 0 ? 'good' : i < 5 ? 'ok' : 'bad';
+            html += '<div class="config-item ' + cls + '"><strong>#' + (i+1) + ':</strong> Y=' + r.yield.toFixed(3) + '<br>';
+            html += '<small>A=' + r.VioA + ' B=' + r.VioB + ' E=' + r.VioE + ' D=' + r.VioD + ' C=' + r.VioC + '</small><br>';
+            html += '<small>Bottleneck: ' + r.bottleneck + '</small></div>';
+        });
+        html += '</div>';
+        gridResults.innerHTML = html;
+
+        var best = top10[0];
+        var bestList = document.getElementById('bestConfigsList');
+        if (bestList && best) {
+            bestList.innerHTML = top10.slice(0,5).map(function(r, i) {
+                var cls = i === 0 ? 'good' : i < 3 ? 'ok' : 'bad';
+                return '<div class="config-item ' + cls + '"><strong>#' + (i+1) + ':</strong> Y=' + r.yield.toFixed(3)
+                    + '<br><small>A=' + r.VioA + ' B=' + r.VioB + ' E=' + r.VioE + ' D=' + r.VioD + ' C=' + r.VioC + '</small></div>';
+            }).join('');
+        }
+    }, 50);
+}
+
+function setupGlobalControls() {
+    var supplySlider = document.getElementById('supplyCap');
+    var supplyValue  = document.getElementById('supplyCapValue');
+    if (supplySlider && supplyValue) supplySlider.oninput = function() { supplyValue.textContent = this.value; runSimulation(); };
+    var burdenSlider = document.getElementById('burdenSensitivity');
+    var burdenValue  = document.getElementById('burdenSensitivityValue');
+    if (burdenSlider && burdenValue) burdenSlider.oninput = function() { burdenValue.textContent = this.value; runSimulation(); };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGenes();
+    setupTabs();
+    buildPathwayDiagram();
+    buildGeneControls();
+    buildSensitivityBars();
+    buildDataTable();
+    setupGlobalControls();
+    runSimulation();
+});
+    </script>
+</body>
+</html>

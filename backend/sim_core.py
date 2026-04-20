@@ -19,12 +19,14 @@ def fold_change(module_row: Dict, level: float) -> float:
         return 1.0 + (Amax - 1.0) * hill(level, EC50, hval)
 
     if mtype == "repressor":
-        min_fold = float(module_row.get("min_fold", 0.2) or 0.2)  # residual when fully repressed
-        return min_fold + (1.0 - min_fold) / (1.0 + (level / EC50) ** hval) + leak
+        min_fold = float(module_row.get("min_fold", 0.2) or 0.2)
+        # floor = min_fold + leak; range = 1 - floor; so level=0 → 1.0, level→∞ → min_fold+leak
+        floor = min_fold + leak
+        return floor + (1.0 - floor) / (1.0 + (level / EC50) ** hval)
 
     if mtype == "binary":
-        # treat >=0.5 as ON (1.0), else OFF (~leak)
-        return (1.0 if level >= 0.5 else 0.0) + leak
+        # ON: locked at 1.0; OFF: only leak passes (methylation semantics)
+        return 1.0 if level >= 0.5 else leak
 
     # default neutral
     return 1.0
@@ -32,9 +34,9 @@ def fold_change(module_row: Dict, level: float) -> float:
 # ---------- core pathway math ----------
 
 def softmin(vals: np.ndarray, p: float = 6.0) -> float:
-    # smooth approx of min(vals); p in [4..8] works well
+    # N-normalized power mean of order -p; equals common value for equal inputs, → min as p→∞
     vals = np.clip(vals, 1e-9, None)
-    return (np.sum(vals ** (-p))) ** (-1.0 / p)
+    return (np.sum(vals ** (-p)) / len(vals)) ** (-1.0 / p)
 
 def compute_activities(
     baseline_k: np.ndarray,

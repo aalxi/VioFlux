@@ -1,170 +1,152 @@
-# VioFlux — Epigenetic Tuning Simulator (Violacein)
+# VioFlux
 
-Interactive, self-contained web app that models epigenetic tuning on the **violacein** pathway (VioA–E). Built with React frontend and Python Flask backend, providing real-time simulation of gene expression modifications and their effects on biosynthetic yield.
+**Epigenetic flux simulator for the violacein biosynthesis pathway**
+*1st place — [TurbioHacks Global Bio × AI Hackathon](https://devpost.com/software/vioflux)*
 
-## Demo & Project Links
+---
 
-🏆 **[View on DevPost](https://devpost.com/software/vioflux)** -- Won First Place in the TurbioHacks Hackathon 2025
+## Biology
 
-### Demo Video
-
-[![VioFlux Demo](https://img.youtube.com/vi/aeIjKiZMbDw/0.jpg)](https://www.youtube.com/watch?v=aeIjKiZMbDw)
-
-*Click the thumbnail above to watch the full VioFlux demonstration*
-
-## Features
-
-**What you can do**
-* **Toggle per-gene epigenetic modules** (buttons):
-   * `CRISPRa` (activator)
-   * `CRISPRi` (repressor)
-   * `Methylation` (binary switch)
-   * `Neutral` (no effect)
-* **Set module "level"** (slider 0.00–1.00) for each gene.
-* **See outputs update live:**
-   * **Yield** (× relative units) and % change vs baseline
-   * **Bottleneck** gene (if detected by rules)
-   * **Gene sensitivity bars** (relative influence)
-   * **Data view**: active genes, current supply cap, burden sensitivity, current yield
-* **Run a sample grid search** (pre-computed examples) in the "Experiments" panel.
-* **Reset** to the neutral starting state.
-
-## Technologies
-
-### Frontend
-- **React** - Component-based UI framework with hooks
-- **CSS3** - Advanced styling with animations and responsive design
-- **Fetch API** - HTTP client for backend communication
-
-### Backend
-- **Python Flask** - Lightweight web framework
-- **Flask-CORS** - Cross-origin resource sharing
-- **NumPy** - Numerical computations for pathway simulation
-- **Pandas** - Data manipulation and CSV handling
-
-## Pathway & Modules
-
-### Pathway (linear order)
-`VioA → VioB → VioE → VioD → VioC`
-
-Each step has a baseline activity and a burden weight:
-* `baseline_k = 1.0` for all steps
-* `burden_w = 1.0` except `VioC = 1.2`
-
-### Module types (mathematical model)
-* **CRISPRa** (`type: activator`) — increases gene expression using Hill function kinetics
-* **CRISPRi** (`type: repressor`) — decreases gene expression with tunable minimum levels
-* **Methylation** (`type: binary`) — ON (≥0.5) gives fixed expression; OFF gives minimal leak
-* **Neutral** — baseline expression level (no modification)
-
-## API Endpoints
+Violacein is a bisindole pigment from *Chromobacterium violaceum* with antibiotic and anticancer activity. Its biosynthesis proceeds through a five-enzyme linear chain:
 
 ```
-GET    /api/health                    # Server health check
-GET    /api/pathway                   # Get pathway gene data
-GET    /api/modules                   # Get available epigenetic modules
-POST   /api/simulate                  # Run pathway simulation
-POST   /api/grid_search              # Run combinatorial optimization
+L-Trp ──(VioA,VioB)──► IPA imine ──(VioE)──► protodeoxyviolaceinic acid
+       ──(VioD)──► protoviolaceinic acid ──(VioC)──► violacein
 ```
 
-## Data Sources
+Two competing branches set hard performance ceilings:
+- **CPA diversion** — when VioE activity is very low, the IPA imine dimerizes spontaneously to chromopyrrolic acid (CPA), yielding zero violacein
+- **Chromoviridans shunt** — when VioC is weak relative to the rest of the pathway, flux diverts to deoxyviolacein / chromoviridans
 
-The simulation uses TSV/CSV configuration files:
-- **Pathway Data**: `data/violacein_pathway.tsv` - Gene order, baseline activities, burden weights
-- **Module Data**: `data/epigenetic_modules.csv` - Module parameters (EC50, Hill coefficients, etc.)
+VioFlux simulates how epigenetic perturbations (CRISPRa, CRISPRi, methylation locks) propagate through this chain and affect yield, accounting for both the bottleneck structure and metabolic/proteome costs.
 
-## Project Structure
+---
+
+## Model
+
+This is a **steady-state, dimensionless flux model**, not an ODE. The yield score `Y` is a relative titer estimate under a given epigenetic configuration.
+
+### 1 — Epigenetic module response
+
+Each gene is assigned a module at a "level" (0–1, representing inducer or guide-RNA strength). The module maps level → fold-change over baseline:
+
+| Module | Formula | Boundaries |
+|--------|---------|------------|
+| **CRISPRa** (activator) | `1 + (A_max−1) × Hill(level, EC₅₀, h)` | level=0 → 1×; level=1 → A_max× |
+| **CRISPRi** (repressor) | `(min_fold+leak) + (1−min_fold−leak) / (1+(level/EC₅₀)^h)` | level=0 → 1×; level→∞ → min_fold+leak |
+| **Methylation** (binary) | `1.0 if level ≥ 0.5 else leak` | ON: full expression; OFF: only constitutive leak |
+| **Neutral** | `1.0` | no effect |
+
+Parameters (A_max, min_fold, EC₅₀, h, leak) are stored in `epi-sim/data/epigenetic_modules.csv`.
+
+### 2 — Effective enzyme activities
+
+`a_i = k_i × F_i`, where `k_i` is the baseline activity weight from `violacein_pathway.tsv`.
+
+### 3 — Bottleneck flux (soft-min)
+
+Pathway flux is limited by the slowest enzyme. A differentiable proxy for `min(a)`:
 
 ```
-├── backend/
-│   ├── api_server.py            # Flask server and API endpoints
-│   ├── sim_core.py             # Mathematical simulation engine
-│   ├── data_io.py              # Data loading utilities
-│   ├── start_vioflux.py        # Startup script
+F_core = ( mean_i( a_i^(−p) ) )^(−1/p)      p = 6  (→ min as p → ∞)
+F      = min(F_core, supply_cap)
+```
+
+The N-normalized power mean is used so equal activities yield `F_core = 1.0` at baseline (unnormalized versions carry an artifact scaling of `N^(1/p)`).
+
+### 4 — Penalty terms
+
+Two multiplicative penalties discount raw flux:
+
+- **Imbalance penalty `P`** — large upstream activities relative to `F_core` signal metabolic buildup and potential toxicity:
+  `P = exp(−α × Σ max(0, a_i/F_core − s))`
+
+- **Burden penalty `Q`** — over-expressing all enzymes strains the *E. coli* proteome:
+  `Q = 1 / (1 + γ × (Σ w_i·a_i − N)²)`
+
+### 5 — Violacein-specific gating rules
+
+- `a[VioE] < 0.10` → hard zero (CPA diversion; no violacein produced)
+- VioC weak relative to pathway median → fractional shunt toward chromoviridans (up to 35% flux loss)
+
+### Final yield
+
+```
+Y = F × P × (1 − shunt_leak) × Q
+```
+
+Gene **activities** are shown normalized to the pathway maximum. The Streamlit app additionally computes log-space finite-difference elasticities (analogous to MCA flux control coefficients) per gene.
+
+---
+
+## Repository structure
+
+```
+VioFlux/
+├── epi-sim/
+│   ├── app.py                      # Streamlit UI
+│   ├── sim_core.py                 # Simulation engine
+│   ├── data_io.py                  # Data loaders
 │   └── data/
-│       ├── violacein_pathway.tsv    # Gene pathway configuration
-│       └── epigenetic_modules.csv   # Module parameters
-├── frontend/
-│   ├── src/
-│   │   ├── App.js              # Main React application
-│   │   └── App.css             # Complete styling
-│   └── public/
-│       └── index.html          # HTML template
+│       ├── violacein_pathway.tsv   # Gene order, baseline k, burden weights
+│       └── epigenetic_modules.csv  # Module response-curve parameters
+├── web-interface/
+│   └── index.html                  # Self-contained browser interface (no backend)
+└── requirements.txt
 ```
 
-## Key Features
+> `web-interface/VioFlux/` is an accidental nested duplicate from an upload and can be deleted.
 
-- **Real-time Simulation**: Updates yield calculations instantly as parameters change
-- **Mathematical Modeling**: Uses Hill kinetics, soft-min bottleneck detection, and burden penalties
-- **Interactive Visualization**: Gene sensitivity bars, yield comparisons, and bottleneck identification  
-- **Grid Search**: Combinatorial optimization testing OFF/MED/ON levels for all genes
-- **Responsive Design**: Works on desktop and mobile devices
-- **Error Handling**: Graceful fallbacks when backend is unavailable
+---
 
-## Installation & Setup
+## Quick start
 
-### Backend (Python Flask)
-
-1. Navigate to backend directory:
+**Streamlit app (full simulation + sensitivity analysis):**
 ```bash
-cd backend
+pip install -r requirements.txt
+cd epi-sim
+streamlit run app.py
 ```
 
-2. Install dependencies:
-```bash
-pip install flask flask-cors pandas numpy
+**Web interface (no install, fully offline):**
 ```
-
-3. Run the Flask server:
-```bash
-python api_server.py
+open web-interface/index.html
 ```
+The web interface runs the same core simulation engine in JavaScript — identical math to `sim_core.py`.
 
-Backend will start on `http://localhost:5000`
+---
 
-### Frontend (React)
+## Data formats
 
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
+**`violacein_pathway.tsv`**
 
-2. Install dependencies:
-```bash
-npm install
-```
+| Column | Description |
+|--------|-------------|
+| `gene` | Gene name (VioA–VioC) |
+| `step_order` | Reaction order in the chain (1–5) |
+| `baseline_k` | Baseline enzyme activity (dimensionless) |
+| `burden_w` | Proteome burden weight |
 
-3. Start the development server:
-```bash
-npm start
-```
+**`epigenetic_modules.csv`**
 
-Frontend will start on `http://localhost:3000`
+| Column | Description |
+|--------|-------------|
+| `module` | Module key (used in UI selectors) |
+| `type` | `activator` / `repressor` / `binary` |
+| `A_max` | Max fold-activation (activator only) |
+| `min_fold` | Residual expression under full repression |
+| `EC50` | Half-maximal inducer concentration (0–1 normalized scale) |
+| `h` | Hill coefficient (cooperativity) |
+| `leak` | Constitutive transcription leak |
 
-## How to Use
+To sub in a new pathway, replace the TSV and CSV — no code changes required.
 
-1. **Start both servers** (backend on port 5000, frontend on port 3000)
-2. **Select epigenetic modules** for each gene using the control buttons
-3. **Adjust module levels** using the sliders (0.0 = OFF, 1.0 = maximum effect)
-4. **Monitor real-time results** in the yield display and sensitivity bars
-5. **Experiment with different combinations** to optimize violacein production
-6. **Use grid search** to systematically test all OFF/MED/ON combinations
-7. **View detailed data** in the Data tab for current settings and gene information
+---
 
-## Mathematical Model
+## Limitations
 
-The simulation implements:
-- **Hill function kinetics** for module dose-response
-- **Soft-minimum bottleneck detection** using smooth approximation
-- **Metabolic burden penalties** based on total protein expression
-- **Pathway-specific rules** (e.g., VioE gating, VioC shunting)
-- **Finite difference sensitivity analysis** for gene importance ranking
-
-## Credits
-
-- **Backend/Mathematical modeling** - Alexei Manuel
-- **Frontend/UI and Backend integration** - Taha Zuberi
-
-## License
-
-This project is available for educational and research purposes.
+- **Parameters are illustrative, not calibrated.** All baseline k values are 1.0; real enzyme rates differ by orders of magnitude and are organism- and condition-dependent.
+- **No dynamics.** This is a steady-state score. Gene expression lag, intermediate accumulation, and feedback are not modeled.
+- **Sensitivities are finite-difference approximations**, not formal MCA flux control coefficients — the summation theorem is not enforced.
+- **Grid search fixes modules to CRISPRa.** The Streamlit grid sweeps expression levels across `{low, mid, high}` for each gene but does not sweep over module types.
+- **VioE and VioC thresholds are heuristic.** The CPA diversion cutoff and chromoviridans shunt fraction are biologically motivated but not fit to experimental data.
