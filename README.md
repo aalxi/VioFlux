@@ -94,9 +94,6 @@ VioFlux/
 │   └── index.html                  # Self-contained browser interface (no backend)
 └── requirements.txt
 ```
-
-> `web-interface/VioFlux/` is an accidental nested duplicate from an upload and can be deleted.
-
 ---
 
 ## Quick start
