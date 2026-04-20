@@ -62,7 +62,7 @@ Two multiplicative penalties discount raw flux:
   `P = exp(−α × Σ max(0, a_i/F_core − s))`
 
 - **Burden penalty `Q`** — over-expressing all enzymes strains the *E. coli* proteome:
-  `Q = 1 / (1 + γ × (Σ w_i·a_i − N)²)`
+  $$Q = \frac{1}{(1 + γ \times (\sum w_i \cdot a_i − N)^2)$$
 
 ### 5 — Violacein-specific gating rules
 
