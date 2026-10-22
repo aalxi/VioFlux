@@ -27,13 +27,13 @@ def open_frontend():
     # Wait a moment for the server to start
     time.sleep(2)
     
-    frontend_path = Path("web-interface/index.html")
+    frontend_path = Path("docs/index.html")
     if frontend_path.exists():
         frontend_url = f"file://{frontend_path.absolute()}"
         print(f"Opening frontend: {frontend_url}")
         webbrowser.open(frontend_url)
     else:
-        print("Frontend file not found at web-interface/index.html")
+        print("Frontend file not found at docs/index.html")
 
 def main():
     print("=" * 50)
@@ -48,7 +48,7 @@ def main():
         "sim_core.py",
         "data/violacein_pathway.tsv",
         "data/epigenetic_modules.csv",
-        "web-interface/index.html"
+        "docs/index.html"
     ]
     
     missing_files = []

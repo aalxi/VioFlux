@@ -1,7 +1,10 @@
 # VioFlux
 
+🏆 **1st place, TurbioHacks Global Bio × AI Hackathon.** Devpost: **https://devpost.com/software/vioflux**
+
+**Live demo → https://aalxi.github.io/VioFlux/**
+
 **Epigenetic flux simulator for the violacein biosynthesis pathway**
-*1st place — [TurbioHacks Global Bio × AI Hackathon](https://devpost.com/software/vioflux)*
 
 ---
 
@@ -90,8 +93,8 @@ VioFlux/
 │   └── data/
 │       ├── violacein_pathway.tsv   # Gene order, baseline k, burden weights
 │       └── epigenetic_modules.csv  # Module response-curve parameters
-├── web-interface/
-│   └── index.html                  # Self-contained browser interface (no backend)
+├── docs/
+│   └── index.html                  # Self-contained browser interface (served by GitHub Pages)
 └── requirements.txt
 ```
 ---
@@ -105,9 +108,11 @@ cd epi-sim
 streamlit run app.py
 ```
 
-**Web interface (no install, fully offline):**
+**Web interface (no install):** https://aalxi.github.io/VioFlux/
+
+To run it offline instead, open the file directly:
 ```
-open web-interface/index.html
+open docs/index.html
 ```
 The web interface runs the same core simulation engine in JavaScript — identical math to `sim_core.py`.
 
